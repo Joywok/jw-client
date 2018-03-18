@@ -74,7 +74,7 @@ function downloadFile(callBack){
 	let len = 0;
 	let data = [];
 	request
-		.get('http://10.211.55.15/tmp/joywok_back.zip')
+		.get('http://jwtest-1802568048.cn-north-1.elb.amazonaws.com.cn/tmp/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})

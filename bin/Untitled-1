@@ -1,1 +1,0 @@
-zip -r joywok_back.zip .babelrc .editorconfig .gitignore README.md build/ gulpfile.js package.json routers/ src/ webpack.config.js yarn.lock 

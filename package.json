@@ -1,7 +1,6 @@
 {
   "name": "jw-client",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
   "bin": {
     "jw-client": "bin/jw-client",
     "jw-client-init": "bin/init",
@@ -25,5 +24,19 @@
     "rimraf": "^2.6.2",
     "underscore": "^1.8.3",
     "user-home": "^2.0.0"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joywok/jw-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Joywok/jw-client/issues"
+  },
+  "homepage": "https://github.com/Joywok/jw-client#readme",
+  "description": ""
 }
