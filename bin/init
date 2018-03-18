@@ -197,12 +197,13 @@ function changeFile(data){
 			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components" }]');
 		}
 		fs.writeFileSync(clientBabel, clientBabelHtml);
+		let htmlfile = process.cwd() + '/' + data["name"] + '/src/index.html';
+		let html = fs.readFileSync(htmlfile, 'utf-8');
 		if(data['jssdk']){
-			let htmlfile = process.cwd()+'/'+data["name"]+'/src/index.html';
-			let html = fs.readFileSync(htmlfile,'utf-8');
 			html = html.replace(/<%jssdk%>/gi,'<script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>');
-			fs.writeFileSync(htmlfile,html);
 		}
+		html = html.replace(/<%name%>/gi,data['name'])
+		fs.writeFileSync(htmlfile, html);
 		let jsfile = process.cwd()+'/'+data["name"]+'/src/scripts/index.js';
 		let js = fs.readFileSync(jsfile,'utf-8');
 		if (data['jssdkconfig']){
@@ -220,11 +221,15 @@ function changeFile(data){
 			console.log();
 			console.log('# ========================');
 			console.log();
-			console.log('使用下面命令赶紧启动吧！');
+			if (data['jssdkconfig']){
+				console.log(chalk.yellow('  注意：包含JSSDK-config，请在手机端调试！'));
+				console.log();
+			}
+			console.log('  使用下面命令赶紧启动吧！');
 			console.log();
-			console.log(chalk.yellow(' cd '+data['name']));
+			console.log(chalk.yellow('  cd '+data['name']));
 			console.log();
-			console.log(chalk.yellow(' npm start '));
+			console.log(chalk.yellow('  npm start '));
 			console.log();
 		})
 	})
