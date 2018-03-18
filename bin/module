@@ -1,0 +1,192 @@
+#!/usr/bin/env node
+
+const program = require('commander');//命令行
+const inquirer = require('inquirer');//命令行问句
+const chalk = require('chalk');//命令行加颜色
+const fs = require('fs');
+const path = require('path');
+const cons = require('consolidate');
+const _ = require('underscore');
+console.log();
+
+program.parse(process.argv);
+let routerTemplate = 'module.exports = {\n\
+	path: "<%name%>",\n\
+	indexRoute: {\n\
+		onEnter(){\n\
+		},\n\
+		getComponent(nextState, cb) {\n\
+			require.ensure([], (require) => {\n\
+				let model = require("../models/<%parent%><%name%>")["default"];\n\
+				registerModel(app,model);\n\
+				cb(null, require("../chunk/<%parent%><%name%>")["default"]);\n\
+			}, "chunk/<%parent%><%name%>.js")\n\
+		}\n\
+	},\n\
+	getChildRoutes(partialNextState, cb) {\n\
+    require.ensure([], (require) => {cb(null,[])})\n\
+  }\n\
+}'
+let modelTemplate = 'import request from "../ utils / EpsRequest";\nexport default {\n\
+	namespace: "<%name%>",\n\
+	state: {\n\
+		loading: false,\n\
+		fix:false,\n\
+		data:[]\n\
+	},\n\
+	reducers: {\n\
+		changeData(state,action){\n\
+      return { ...state, ...action.payload };\n\
+    }\n\
+	},\n\
+	effects: {\n\
+	},\n\
+	subscriptions: {\n\
+	},\n\
+};'
+let servicesTemplate = "import request from '../utils/EpsRequest';"
+
+let project = [
+	{
+		type: 'input',
+		name: 'parent',
+		message: '是否有父模块（首字母大写）（无则留空）:'
+	}
+]
+
+function create(name, parentName){
+	fs.exists(process.cwd() + '/src/scripts/routes/' +name + '.js', function (exists) {
+		if (exists) {
+			console.log();
+			console.log(chalk.red('# ***********************'));
+			console.log();
+			console.log(chalk.red('  ERROR：模块【'+name+'】已存在!'));
+			console.log();
+			console.log(chalk.red('# ***********************'));
+			console.log();
+			return
+		} else {
+			routerTemplate = routerTemplate.replace(/<%parent%>/gi, parentName + '/');
+			routerTemplate = routerTemplate.replace(/<%name%>/gi, name);
+			let routerTemplatePath = process.cwd() + '/src/scripts/routes/' + name + '.js';
+			fs.writeFileSync(routerTemplatePath, routerTemplate);
+			modelTemplate = modelTemplate.replace(/<%name%>/gi, name);
+			let modelTemplatePath = process.cwd() + '/src/scripts/models/' + name + '.js';
+			fs.writeFileSync(modelTemplatePath, modelTemplate);
+			servicesTemplate = servicesTemplate.replace(/<%name%>/gi, name);
+			let servicesTemplatePath = process.cwd() + '/src/scripts/services/' + name + '.js';
+			fs.writeFileSync(servicesTemplatePath, servicesTemplate);
+			console.log();
+			console.log(chalk.yellow('# 模块初始化成功!'));
+			console.log();
+			console.log('# ========================');
+			console.log();
+			console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
+			console.log();
+			console.log(chalk.yellow('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require(require("./routes/' + name + '"))\n      ])\n\    })\n  }'));
+			console.log();
+			console.log('# ========================');
+			console.log();
+		}
+	});
+}
+let name = program.args[0] || '';
+if(name.length!=0){
+	inquirer.prompt(project)
+		.then((answers) => {
+			let parentName = ''
+			if(answers['parent'] && answers['parent'].length!=0){
+				parentName = answers['parent']
+				fs.exists(process.cwd() + '/src/scripts/routes/' + answers['parent'] + '.js', function (exists) {
+					if(!exists){
+						console.log();
+						console.log(chalk.red('# ***********************'));
+						console.log();
+						console.log(chalk.red('  ERROR：父模块不存在!'));
+						console.log();
+						console.log(chalk.red('# ***********************'));
+						console.log();
+						return 
+					}else{
+						create(name, parentName)
+					}
+				});
+			}else{
+				create(name,'')
+			}
+		})
+}else{
+	console.log(chalk.red('# ***********************'));
+	console.log();
+	console.log(chalk.red('  ERROR：请使用以下命令初始化模块!'));
+	console.log();
+	console.log(chalk.red('  jw-client module xxxx'));
+	console.log();
+	console.log(chalk.red('# ***********************'));
+	console.log();
+}
+
+
+// let packageFile = process.cwd()+'/JwDemo/src/scripts/routes/aaaa.js';
+// let config = fs.readFileSync(packageFile,'utf-8');
+// config = config.replace(/(cb)\(null,\[\n*.*\n*\r*\s*]/ig,"$&");
+// console.log(config,'bbbbbbbb');
+// let BBBBBBFile = process.cwd()+'/JwDemo/src/scripts/routes/bbbbb.js';
+// let aaa = _.template(routerTemplate);
+// var bbb = aaa({name:'xxxxx',parent:'',childRouter:'[{}]'});
+// console.log(bbb,'zzzzzzzzzz');
+// fs.writeFileSync(BBBBBBFile,bbb);
+// cons.underscore(packageFile,{name:'xxxxx',parent:'',childRouter:'[{}]'})
+// 	.then(function (html) {
+//     // console.log(html);
+//     fs.writeFileSync(BBBBBBFile,html);
+//   })
+//   .catch(function (err) {
+//     throw err;
+//   });
+// let before = config.replace(/.*cb/ig,"$&");
+// let beforeIndex = config.indexOf('cb(null,[');
+// let before = config.substring(0,beforeIndex+9);
+// // /((cb)\(null,\[\n*.*\n*\r*\s*])/ig
+// let afterIndex = config.indexOf(']');
+
+// fs.writeFileSync(BBBBBBFile,before);
+// console.log(typeof(config),'12312312312');
+/*
+	{
+		path: <%=name%>,
+		indexRoute: {
+			onEnter(){
+			},
+			getComponent(nextState, cb) {
+				require.ensure([], (require) => {
+					let model = require('../models/<%=parent%><%=name%>')["default"];
+					registerModel(app,model);
+					cb(null, require('../chunk/<%=parent%><%=name%>')["default"]);
+				}, 'chunk/<%=parent%><%=name%>.js')
+			}
+		},
+		getChildRoutes(partialNextState, cb) {
+	    require.ensure([], (require) => {cb(null,
+	    	[<%=childRouter%>]
+	    )})
+	  }
+	}
+*/
+// console.log(JSON.parse(config));
+// 
+//module名称
+//是否有父级（输入名称，或者为空）？
+//是否要List列表
+//生成
+//  mkdir src/scripts/chunk/modulename
+//  生成router文件放到src/scripts/router/modulename
+//  生成model文件放到src/scripts/models/modulename
+//  生成services文件放到src/scripts/services/modulename
+//  查找父级router，查找出对应的内容，添加新router
+//  
+//
+//
+//
+//
+//

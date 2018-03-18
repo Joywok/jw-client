@@ -1,0 +1,310 @@
+#!/usr/bin/env node
+/*
+	jw-client init module(项目名称)
+	1.下载默认模板
+	2.判断init后缀是否输入了名称
+	3.判断当前目录是否有重复的Name
+		Y:
+		N:
+			1）项目名称
+			2）项目注释
+			3）所有者
+			4) 是否配置代理
+			5）是否包含js-sdk
+			6) 是否包含免登功能
+			7）使用什么方式安装node_module
+				npm/yarn
+	4.创建module文件夹
+	5.解压缩默认模板到目录中
+	6.替换Package.json
+	7.进入文件夹 安装node模块
+	8.提示如何启动
+
+	jw-client module name
+	1.判断当前是否有此name模块
+		Y：提示
+	2.是否有父级（输入名称，或者为空）？
+	3.mkdir src/scripts/chunk/modulename
+  4.生成router文件放到src/scripts/router/modulename
+  5.生成model文件放到src/scripts/models/modulename
+  6.生成services文件放到src/scripts/services/modulename
+
+	判断是否有父级 存疑
+		y:查找父级router，改造childRouters
+		n:查找根router，改造childRouters
+
+ */
+
+const program = require('commander');//命令行
+const inquirer = require('inquirer');//命令行问句
+const chalk = require('chalk');//命令行加颜色
+const ora = require('ora');//命令行loading
+const rm = require('rimraf').sync;//命令行删除数据
+const exec = require('child_process').execSync;
+const spawn = require('child_process').spawn
+const consolidate = require('consolidate');
+const home = require('user-home');
+const fsExtra = require('fs-extra');
+const chokidar = require('chokidar');
+const DecompressZip = require('decompress-zip');
+const fs = require('fs');
+const path = require('path');
+const request = require('request');
+
+function getGitUser(){
+	let name
+  let email
+  try {
+    name = exec('git config --get user.name')
+    email = exec('git config --get user.email')
+  } catch (e) {}
+  name = name && JSON.stringify(name.toString().trim()).slice(1, -1)
+  email = email && email.toString().trim();
+  return {
+  	name:name,email:email
+  }
+}
+const gituser = getGitUser();
+program.parse(process.argv);
+function downloadFile(callBack){
+	rm(home+'/joywok_back.zip');
+	const spinner = ora('模板下载中…').start();
+	let body = "";
+	let cur = 0;
+	let len = 0;
+	let data = [];
+	request
+		.get('http://10.211.55.15/tmp/joywok_back.zip')
+		.on( 'response', function ( data ) {
+			len = parseInt(data.headers['content-length']);
+		})
+		.on("data", function(chunk) {
+			data.push(chunk);
+			body += chunk;
+			cur += chunk.length;
+			spinner.text = ("已下载【 " + parseInt(100.0 * cur / len) + "% ]");
+		})
+		.on('end',function(){
+			spinner.succeed();
+			callBack()
+		})
+		.pipe(fs.createWriteStream(home+'/joywok_back.zip'))
+}
+let name = program.args[0] || '';
+let project = [
+	{
+		type:'input',
+		name:'name',
+		message:'项目名称:',
+		default:name
+	},{
+		type:'input',
+		name:'description',
+		message:'项目注释:',
+		default:'A project from jw-client'
+	},{
+		type:'input',
+		name:'author',
+		message:'所有者:',
+		default:gituser['email']
+	},{
+    type: 'list',
+    name: 'installnode',
+    message: '使用什么方式安装node_module?',
+    choices: [{name:'  yarn',value:'yarn'},{name:'  npm install',value:'npm'},{name:'  none',value:'none'}],
+	}, {
+		type: 'list',
+		name: 'client',
+		message: '开发平台的？(平台不同，引入的组件库不同)',
+		choices: [{ name: 'Web', value: 'Web' }, { name: 'Mobile', value: 'mobile' }],
+	},{
+		type:'confirm',
+		name:'jssdk',
+		message:'是否包含JSSDK开发框架'
+		// 
+	}, {
+		type: 'confirm',
+		name: 'jssdkconfig',
+		message: '是否包含JSSDK免登功能'
+		// <script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>
+	}
+]
+
+function unzip(data,callBack){
+	const spinner = ora('解压缩中…').start();
+	var unzipper = new DecompressZip(home+'/joywok_back.zip')
+	unzipper.on('error', function (err) {
+	  console.log('Caught an error');
+	});
+	unzipper.on('extract', function (log) {
+		console.log();
+		spinner.succeed('解压缩成功');
+		console.log('安装中…')
+		console.log();
+		callBack();
+	});
+	unzipper.on('progress', function (fileIndex, fileCount) {
+		// target.find('.update-code-btn').html('<span>更新进度:'+parseInt((fileIndex+1)/fileCount*100)+'%</span>')
+	});
+	let url = './'+data['name']+'/'
+	unzipper.extract({
+    path: url,
+    filter: function (file) {
+      return file.type !== "SymbolicLink";
+    }
+	});
+}
+function runCommand(cmd, args, options) {
+  return new Promise((resolve, reject) => {
+    const spwan = spawn(
+      cmd,
+      args,
+      Object.assign(
+        {
+          cwd: process.cwd(),
+          stdio: 'inherit',
+          shell: true,
+        },
+        options
+      )
+    )
+    spwan.on('exit', () => {
+      resolve()
+    })
+  })
+}
+
+function changeFile(data){
+	console.log();
+	unzip(data,function(){
+	  let packageFile = process.cwd()+'/'+data['name']+'/package.json'
+	  let config = JSON.parse(fs.readFileSync(packageFile,'utf-8'));
+	  let newData = Object.assign(config,data);
+	  fs.writeFileSync(packageFile, JSON.stringify(newData, null, 2) + '\n')
+  	let cwd = '';
+  	let args = [];
+		if(data['installnode'] == 'yarn'){
+			cwd = 'yarn';
+		}else if(data['installnode'] == 'npm'){
+			cwd = 'npm';
+			args = ['install']
+		}
+		let clientBabel = process.cwd() + '/' + data["name"] + '/.babelrc';
+		let clientBabelHtml = fs.readFileSync(clientBabel, 'utf-8');
+		if(data['client'] =='web'){
+			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components-mobile" }]');
+		}else{
+			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components" }]');
+		}
+		fs.writeFileSync(clientBabel, clientBabelHtml);
+		if(data['jssdk']){
+			let htmlfile = process.cwd()+'/'+data["name"]+'/src/index.html';
+			let html = fs.readFileSync(htmlfile,'utf-8');
+			html = html.replace(/<%jssdk%>/gi,'<script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>');
+			fs.writeFileSync(htmlfile,html);
+		}
+		let jsfile = process.cwd()+'/'+data["name"]+'/src/scripts/index.js';
+		let js = fs.readFileSync(jsfile,'utf-8');
+		if (data['jssdkconfig']){
+			js = js.replace(/<%jssdk-config%>/gi,'jw.config({\n  debug: false,\n  appid: "0d386947186a8c8294b6943946968abd", \n  timestamp: 0, \n  nonceStr: "", \n  signature: "",\n  app_access_token: "",\n  corpid: "1Vp5C75bjnbhEOMH"\n});\njw.ready = function () {\n  app.router(require("./router"));\n  app.start("#root");\n}');
+		}else{
+			js = js.replace(/<%jssdk-config%>/gi,'\app.router(require("./router"));\napp.start("#root");\n');
+		}
+		fs.writeFileSync(jsfile, js);
+		runCommand(cwd,args,{
+			cwd:process.cwd()+'/'+data['name']
+		})
+		.then(function(){
+			console.log();
+			console.log('# 项目初始化成功!');
+			console.log();
+			console.log('# ========================');
+			console.log();
+			console.log('使用下面命令赶紧启动吧！');
+			console.log();
+			console.log(chalk.yellow(' cd '+data['name']));
+			console.log();
+			console.log(chalk.yellow(' npm start '));
+			console.log();
+		})
+	})
+}
+
+function run(){
+	downloadFile(function(){
+		inquirer.prompt(project)
+		.then((answers) => {
+			changeFile(answers)
+		})
+	})  
+}
+function SpecailRun(callBack){
+	downloadFile(function(){
+		project[0]['default'] = 'JwDemo';
+		inquirer.prompt(project)
+		.then((answers) => {
+			let oldanswers = answers;
+			const hasNameFolder = fs.existsSync(oldanswers['name']); 
+			if(hasNameFolder){
+				inquirer.prompt([{
+					type:'confirm',
+					name:'replacefolder',
+					message:'目录已经存在，是否覆盖？'
+				}])
+				.then((answers) => {
+					if(answers['replacefolder']){
+						console.log()
+						console.log('清空目录中…')
+						let removePath = oldanswers['name']+'/*'
+						rm(removePath);
+						console.log('清空目录成功')
+						changeFile(oldanswers)
+					}
+				})
+			}else{
+				let str = 'mkdir '+oldanswers['name'];
+				exec(str);
+				changeFile(oldanswers)
+			}
+		})
+	})
+}
+
+console.log();
+if(name.length!=0){
+	const hasNameFolder = fs.existsSync(name); 
+	if(hasNameFolder){
+		inquirer.prompt([{
+			type:'confirm',
+			name:'replacefolder',
+			message:'目录已经存在，是否覆盖？'
+		}])
+		.then((answers) => {
+			if(answers['replacefolder']){
+				let removePath = name+'/*';
+				console.log()
+				console.log('清空目录中…')
+				rm(removePath);
+				console.log('清空目录成功')
+				run();
+			}
+		})
+	}else{
+		let str = 'mkdir '+name;
+		exec(str);
+		run();
+	}
+}else{
+	SpecailRun()
+}
+
+
+
+
+
+
+
+
+
+
+
