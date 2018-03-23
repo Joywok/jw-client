@@ -192,9 +192,9 @@ function changeFile(data){
 		let clientBabel = process.cwd() + '/' + data["name"] + '/.babelrc';
 		let clientBabelHtml = fs.readFileSync(clientBabel, 'utf-8');
 		if(data['client'] =='web'){
-			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components-mobile" }]');
-		}else{
 			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components" }]');
+		}else{
+			clientBabelHtml = clientBabelHtml.replace(/<%plugins%>/gi, '["import", { "style": true, "libraryName": "jw-components-mobile" }]');
 		}
 		fs.writeFileSync(clientBabel, clientBabelHtml);
 		let htmlfile = process.cwd() + '/' + data["name"] + '/src/index.html';
