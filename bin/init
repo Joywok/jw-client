@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// zip -r joywok_back.zip .babelrc .editorconfig .gitignore README.md build/ gulpfile.js package.json routers/ src/ webpack.config.js yarn.lock 
 /*
 	jw-client init module(项目名称)
 	1.下载默认模板
@@ -75,6 +76,7 @@ function downloadFile(callBack){
 	let data = [];
 	request
 		.get('http://jwtest-1802568048.cn-north-1.elb.amazonaws.com.cn/tmp/joywok_back.zip')
+		// .get('http://10.211.55.10/tmp/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -207,7 +209,7 @@ function changeFile(data){
 		let jsfile = process.cwd()+'/'+data["name"]+'/src/scripts/index.js';
 		let js = fs.readFileSync(jsfile,'utf-8');
 		if (data['jssdkconfig']){
-			js = js.replace(/<%jssdk-config%>/gi,'jw.config({\n  debug: false,\n  appid: "0d386947186a8c8294b6943946968abd", \n  timestamp: 0, \n  nonceStr: "", \n  signature: "",\n  app_access_token: "",\n  corpid: "1Vp5C75bjnbhEOMH"\n});\njw.ready = function () {\n  app.router(require("./router"));\n  app.start("#root");\n}');
+			js = js.replace(/<%jssdk-config%>/gi,'jw.config({\n  debug: false,\n  appid: "xxxxxxxx", \n  timestamp: 0, \n  nonceStr: "", \n  signature: "",\n  app_access_token: "",\n  corpid: "xxxxxxx"\n});\njw.ready = function () {\n  app.router(require("./router"));\n  app.start("#root");\n}');
 		}else{
 			js = js.replace(/<%jssdk-config%>/gi,'\app.router(require("./router"));\napp.start("#root");\n');
 		}
