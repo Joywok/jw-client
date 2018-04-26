@@ -10,24 +10,47 @@ const _ = require('underscore');
 console.log();
 
 program.parse(process.argv);
-let routerTemplate = 'module.exports = {\n\
+
+let indexTemplate = 'import React , {Component} from "react";\n\
+import {connect} from "dva";\n\
+import { Router,hashHistory,browserHistory} from "dva/router";\n\
+class <%name%> extends Component{\n\
+  render(){\n\
+    var self=this;\n\
+    return(\n\
+        <div className="<%name%>">\n\
+        	<%name%>\n\
+        </div>\n\
+      );\n\
+  }\n\
+}\n\
+\n\
+export default connect((state)=>{return state})(<%name%>);\n\
+';
+
+let routerTemplate = 'const registerModel = (app, model)=>{\n\
+  if (!(app._models.filter(m => m.namespace === model.namespace).length === 1)) {\n\
+    app.model(model)\n\
+  }\n\
+}\n\
+module.exports = {\n\
 	path: "<%name%>",\n\
 	indexRoute: {\n\
 		onEnter(){\n\
 		},\n\
 		getComponent(nextState, cb) {\n\
 			require.ensure([], (require) => {\n\
-				let model = require("../models/<%parent%><%name%>")["default"];\n\
+				let model = require("../models/<%name%>")["default"];\n\
 				registerModel(app,model);\n\
-				cb(null, require("../chunk/<%parent%><%name%>")["default"]);\n\
-			}, "chunk/<%parent%><%name%>.js")\n\
+				cb(null, require("../chunk/<%name%>/Index")["default"]);\n\
+			}, "chunk/<%name%>/Index")\n\
 		}\n\
 	},\n\
 	getChildRoutes(partialNextState, cb) {\n\
     require.ensure([], (require) => {cb(null,[])})\n\
   }\n\
 }'
-let modelTemplate = 'import request from "../ utils / EpsRequest";\nexport default {\n\
+let modelTemplate = 'import request from "../utils/request";\nexport default {\n\
 	namespace: "<%name%>",\n\
 	state: {\n\
 		loading: false,\n\
@@ -44,7 +67,7 @@ let modelTemplate = 'import request from "../ utils / EpsRequest";\nexport defau
 	subscriptions: {\n\
 	},\n\
 };'
-let servicesTemplate = "import request from '../utils/EpsRequest';"
+let servicesTemplate = "import request from '../utils/request';"
 
 let project = [
 	{
@@ -66,7 +89,20 @@ function create(name, parentName){
 			console.log();
 			return
 		} else {
-			routerTemplate = routerTemplate.replace(/<%parent%>/gi, parentName + '/');
+			fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
+				if(err){
+					console.error(err);	
+					return 
+				}
+	    	indexTemplate = indexTemplate.replace(/<%name%>/gi, name);
+				let indexTemplatePath = process.cwd() + '/src/scripts/chunk/' + name + '/Index.js';
+				fs.writeFileSync(indexTemplatePath, indexTemplate);
+			})
+			// if(parentName){
+			// 	routerTemplate = routerTemplate.replace(/<%parent%>/gi, parentName + '/');	
+			// }else{
+			// 	routerTemplate = routerTemplate.replace(/<%parent%>/gi, '');
+			// }
 			routerTemplate = routerTemplate.replace(/<%name%>/gi, name);
 			let routerTemplatePath = process.cwd() + '/src/scripts/routes/' + name + '.js';
 			fs.writeFileSync(routerTemplatePath, routerTemplate);
@@ -83,7 +119,7 @@ function create(name, parentName){
 			console.log();
 			console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
 			console.log();
-			console.log(chalk.yellow('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require(require("./routes/' + name + '"))\n      ])\n\    })\n  }'));
+			console.log(chalk.yellow('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
 			console.log();
 			console.log('# ========================');
 			console.log();
@@ -126,67 +162,3 @@ if(name.length!=0){
 	console.log();
 }
 
-
-// let packageFile = process.cwd()+'/JwDemo/src/scripts/routes/aaaa.js';
-// let config = fs.readFileSync(packageFile,'utf-8');
-// config = config.replace(/(cb)\(null,\[\n*.*\n*\r*\s*]/ig,"$&");
-// console.log(config,'bbbbbbbb');
-// let BBBBBBFile = process.cwd()+'/JwDemo/src/scripts/routes/bbbbb.js';
-// let aaa = _.template(routerTemplate);
-// var bbb = aaa({name:'xxxxx',parent:'',childRouter:'[{}]'});
-// console.log(bbb,'zzzzzzzzzz');
-// fs.writeFileSync(BBBBBBFile,bbb);
-// cons.underscore(packageFile,{name:'xxxxx',parent:'',childRouter:'[{}]'})
-// 	.then(function (html) {
-//     // console.log(html);
-//     fs.writeFileSync(BBBBBBFile,html);
-//   })
-//   .catch(function (err) {
-//     throw err;
-//   });
-// let before = config.replace(/.*cb/ig,"$&");
-// let beforeIndex = config.indexOf('cb(null,[');
-// let before = config.substring(0,beforeIndex+9);
-// // /((cb)\(null,\[\n*.*\n*\r*\s*])/ig
-// let afterIndex = config.indexOf(']');
-
-// fs.writeFileSync(BBBBBBFile,before);
-// console.log(typeof(config),'12312312312');
-/*
-	{
-		path: <%=name%>,
-		indexRoute: {
-			onEnter(){
-			},
-			getComponent(nextState, cb) {
-				require.ensure([], (require) => {
-					let model = require('../models/<%=parent%><%=name%>')["default"];
-					registerModel(app,model);
-					cb(null, require('../chunk/<%=parent%><%=name%>')["default"]);
-				}, 'chunk/<%=parent%><%=name%>.js')
-			}
-		},
-		getChildRoutes(partialNextState, cb) {
-	    require.ensure([], (require) => {cb(null,
-	    	[<%=childRouter%>]
-	    )})
-	  }
-	}
-*/
-// console.log(JSON.parse(config));
-// 
-//module名称
-//是否有父级（输入名称，或者为空）？
-//是否要List列表
-//生成
-//  mkdir src/scripts/chunk/modulename
-//  生成router文件放到src/scripts/router/modulename
-//  生成model文件放到src/scripts/models/modulename
-//  生成services文件放到src/scripts/services/modulename
-//  查找父级router，查找出对应的内容，添加新router
-//  
-//
-//
-//
-//
-//

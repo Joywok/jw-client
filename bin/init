@@ -75,8 +75,8 @@ function downloadFile(callBack){
 	let len = 0;
 	let data = [];
 	request
-		.get('http://jwtest-1802568048.cn-north-1.elb.amazonaws.com.cn/tmp/joywok_back.zip')
-		// .get('http://10.211.55.10/tmp/joywok_back.zip')
+		// .get('http://jwtest-1802568048.cn-north-1.elb.amazonaws.com.cn/tmp/joywok_back.zip')
+		.get('http://10.211.55.10/tmp/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -136,7 +136,8 @@ function unzip(data,callBack){
 	const spinner = ora('解压缩中…').start();
 	var unzipper = new DecompressZip(home+'/joywok_back.zip')
 	unzipper.on('error', function (err) {
-	  console.log('Caught an error');
+	  // spinner.error(err);
+	  console.log('解压缩错误，请联系管理员。错误信息:',err);
 	});
 	unzipper.on('extract', function (log) {
 		console.log();
@@ -203,6 +204,8 @@ function changeFile(data){
 		let html = fs.readFileSync(htmlfile, 'utf-8');
 		if(data['jssdk']){
 			html = html.replace(/<%jssdk%>/gi,'<script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>');
+		}else{
+			html = html.replace(/<%jssdk%>/gi,'');
 		}
 		html = html.replace(/<%name%>/gi,data['name'])
 		fs.writeFileSync(htmlfile, html);
