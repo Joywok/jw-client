@@ -7,6 +7,12 @@ const fs = require('fs');
 const path = require('path');
 const cons = require('consolidate');
 const _ = require('underscore');
+const rm = require('rimraf').sync;//命令行删除数据
+const exec = require('child_process').execSync;
+const ora = require('ora');//命令行loading
+const home = require('user-home');
+const request = require('request');
+const DecompressZip = require('decompress-zip');
 console.log();
 
 program.parse(process.argv);
@@ -74,10 +80,14 @@ let project = [
 		type: 'input',
 		name: 'parent',
 		message: '是否有父模块（首字母大写）（无则留空）:'
+	},{
+		type:'input',
+		name:'target',
+		message:'是否使用模板生成，输入模板名称（无责留空）'
 	}
 ]
 
-function create(name, parentName){
+function create(name, parentName,TemplateName){
 	fs.exists(process.cwd() + '/src/scripts/routes/' +name + '.js', function (exists) {
 		if (exists) {
 			console.log();
@@ -89,40 +99,150 @@ function create(name, parentName){
 			console.log();
 			return
 		} else {
-			fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
-				if(err){
-					console.error(err);	
-					return 
-				}
-	    	indexTemplate = indexTemplate.replace(/<%name%>/gi, name);
-				let indexTemplatePath = process.cwd() + '/src/scripts/chunk/' + name + '/Index.js';
-				fs.writeFileSync(indexTemplatePath, indexTemplate);
-			})
-			// if(parentName){
-			// 	routerTemplate = routerTemplate.replace(/<%parent%>/gi, parentName + '/');	
-			// }else{
-			// 	routerTemplate = routerTemplate.replace(/<%parent%>/gi, '');
-			// }
-			routerTemplate = routerTemplate.replace(/<%name%>/gi, name);
-			let routerTemplatePath = process.cwd() + '/src/scripts/routes/' + name + '.js';
-			fs.writeFileSync(routerTemplatePath, routerTemplate);
-			modelTemplate = modelTemplate.replace(/<%name%>/gi, name);
-			let modelTemplatePath = process.cwd() + '/src/scripts/models/' + name + '.js';
-			fs.writeFileSync(modelTemplatePath, modelTemplate);
-			servicesTemplate = servicesTemplate.replace(/<%name%>/gi, name);
-			let servicesTemplatePath = process.cwd() + '/src/scripts/services/' + name + '.js';
-			fs.writeFileSync(servicesTemplatePath, servicesTemplate);
-			console.log();
-			console.log(chalk.yellow('# 模块初始化成功!'));
-			console.log();
-			console.log('# ========================');
-			console.log();
-			console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
-			console.log();
-			console.log(chalk.yellow('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
-			console.log();
-			console.log('# ========================');
-			console.log();
+			console.log(typeof(TemplateName),'这个是什么啊');
+			if(typeof(TemplateName)!='undefined' && TemplateName.length!=0){
+				rm(home+'/joywok_template.zip');
+				let spinner = ora('模板下载中…').start();
+				let body = "";
+				let cur = 0;
+				let len = 0;
+				let data = [];
+				request
+					// .get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
+					.get('http://0.0.0.0:8080/joywok_template.zip')
+					.on( 'response', function ( data ) {
+						len = parseInt(data.headers['content-length']);
+					})
+					.on("data", function(chunk) {
+						data.push(chunk);
+						body += chunk;
+						cur += chunk.length;
+						spinner.text = ("已下载【 " + parseInt(100.0 * cur / len) + "% ]");
+					})
+					.on('end',function(){
+						spinner.succeed();
+						spinner = ora('解压缩中…').start();
+						var unzipper = new DecompressZip(home+'/joywok_template.zip')
+						unzipper.on('error', function (err) {
+						  // spinner.error(err);
+						  console.log('解压缩错误，请联系管理员。错误信息:',err);
+						});
+						unzipper.on('extract', function (log) {
+							spinner.succeed('解压缩成功');
+							console.log('拷贝文件到项目中……')
+							console.log();
+
+							let errorTip = 0
+							let config = JSON.parse(fs.readFileSync(home+'/joywok_template/config.json','utf-8'));
+							let chunk = config['chunk'];
+							let components = config['components'];
+							let models = config['models'];
+							let scss = config['scss'];
+							let routers = config['routers'];
+							console.log(scss,'123123123');
+							// fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
+							// 	if(err){
+							// 		errorTip++
+							// 		return 
+							// 	}
+							// 	_.each(chunk,function(i){
+							// 		let template = fs.readFileSync(home+'/joywok_template/chunk/'+i,'utf-8');
+							// 		template = template.replace(/<%name%>/gi, name);
+							// 		let templatePath = process.cwd() + '/src/scripts/chunk/' + name + '/'+i
+							// 		fs.writeFileSync(templatePath, template);
+							// 	})
+							// })
+							// _.each(components,function(i){
+							// 	let template = fs.readFileSync(home+'/joywok_template/components/'+i,'utf-8');
+							// 	let templatePath = process.cwd() + '/src/scripts/components/'+i
+							// 	fs.writeFileSync(templatePath, template);
+							// })
+							// fs.mkdir(process.cwd() + '/src/scripts/models/' + name,(err)=>{
+							// 	if(err){
+							// 		errorTip++
+							// 		return 
+							// 	}
+							// 	_.each(models,function(i){
+							// 		let template = fs.readFileSync(home+'/joywok_template/models/'+i,'utf-8');
+							// 		template = template.replace(/<%name%>/gi, name);
+							// 		let templatePath = process.cwd() + '/src/scripts/models/'+name+'/'+i
+							// 		fs.writeFileSync(templatePath, template);
+							// 	})
+
+							// })
+							fs.mkdir(process.cwd() + '/src/scss/' + name,(err)=>{
+								if(err){
+									errorTip++
+									return 
+								}
+								_.each(models,function(i){
+									let template = fs.readFileSync(home+'/joywok_template/scss/'+i,'utf-8');
+									template = template.replace(/<%name%>/gi, name);
+									let templatePath = process.cwd() + '/src/scss/'+name+'/'+i
+									fs.writeFileSync(templatePath, template);
+								})
+							})
+
+							// fs.mkdir(process.cwd() + '/src/scripts/routes/' + name,(err)=>{
+							// 	if(err){
+							// 		errorTip++
+							// 		return 
+							// 	}
+							// 	_.each(routers,function(i){
+							// 		let template = fs.readFileSync(home+'/joywok_template/routers/'+i,'utf-8');
+							// 		template = template.replace(/<%name%>/gi, name);
+							// 		let templatePath = process.cwd() + '/src/scripts/routes/'+name+'/'+i
+							// 		fs.writeFileSync(templatePath, template);
+							// 	})
+							// })
+
+							console.log(errorTip)
+
+
+						});
+						unzipper.on('progress', function (fileIndex, fileCount) {
+						});
+						let url = home+'/joywok_template';
+						unzipper.extract({
+					    path: url,
+					    filter: function (file) {
+					      return file.type !== "SymbolicLink";
+					    }
+						});
+					})
+					.pipe(fs.createWriteStream(home+'/joywok_template.zip'))
+			}else{
+				fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
+					if(err){
+						console.error(err);	
+						return 
+					}
+		    	indexTemplate = indexTemplate.replace(/<%name%>/gi, name);
+					let indexTemplatePath = process.cwd() + '/src/scripts/chunk/' + name + '/Index.js';
+					fs.writeFileSync(indexTemplatePath, indexTemplate);
+				})
+				routerTemplate = routerTemplate.replace(/<%name%>/gi, name);
+				let routerTemplatePath = process.cwd() + '/src/scripts/routes/' + name + '.js';
+				fs.writeFileSync(routerTemplatePath, routerTemplate);
+				modelTemplate = modelTemplate.replace(/<%name%>/gi, name);
+				let modelTemplatePath = process.cwd() + '/src/scripts/models/' + name + '.js';
+				fs.writeFileSync(modelTemplatePath, modelTemplate);
+				servicesTemplate = servicesTemplate.replace(/<%name%>/gi, name);
+				let servicesTemplatePath = process.cwd() + '/src/scripts/services/' + name + '.js';
+				fs.writeFileSync(servicesTemplatePath, servicesTemplate);
+
+				console.log();
+				console.log(chalk.yellow('# 模块初始化成功!'));
+				console.log();
+				console.log('# ========================');
+				console.log();
+				console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
+				console.log();
+				console.log(chalk.yellow('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
+				console.log();
+				console.log('# ========================');
+				console.log();
+			}
 		}
 	});
 }
@@ -130,7 +250,8 @@ let name = program.args[0] || '';
 if(name.length!=0){
 	inquirer.prompt(project)
 		.then((answers) => {
-			let parentName = ''
+			let parentName = '';
+			let TemplateName = answers['target'];
 			if(answers['parent'] && answers['parent'].length!=0){
 				parentName = answers['parent']
 				fs.exists(process.cwd() + '/src/scripts/routes/' + answers['parent'] + '.js', function (exists) {
@@ -144,11 +265,11 @@ if(name.length!=0){
 						console.log();
 						return 
 					}else{
-						create(name, parentName)
+						create(name, parentName,TemplateName)
 					}
 				});
 			}else{
-				create(name,'')
+				create(name,'',TemplateName)
 			}
 		})
 }else{
