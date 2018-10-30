@@ -76,7 +76,7 @@ function downloadFile(callBack){
 	let data = [];
 	request
 		.get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
-		// .get('http://10.211.55.10/tmp/joywok_back.zip')
+		// .get('http://0.0.0.0:8080/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -203,7 +203,7 @@ function changeFile(data){
 		let htmlfile = process.cwd() + '/' + data["name"] + '/src/index.html';
 		let html = fs.readFileSync(htmlfile, 'utf-8');
 		if(data['jssdk']){
-			html = html.replace(/<%jssdk%>/gi,'<script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>');
+			html = html.replace(/<%jssdk%>/gi,'<script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>\n<script type="text/javascript" src="https://www.joywok.com/public/scripts/connect-ide.js"></script>');
 		}else{
 			html = html.replace(/<%jssdk%>/gi,'');
 		}
@@ -219,6 +219,16 @@ function changeFile(data){
 		fs.writeFileSync(jsfile, js);
 		runCommand(cwd,args,{
 			cwd:process.cwd()+'/'+data['name']
+		})
+		.then(function(){
+			return runCommand('gulp',['publish'],{
+				cwd:process.cwd()+'/'+data['name']
+			})
+		})
+		.then(function(){
+			return runCommand('webpack',['p'],{
+				cwd:process.cwd()+'/'+data['name']
+			})
 		})
 		.then(function(){
 			console.log();
@@ -279,6 +289,9 @@ function SpecailRun(callBack){
 		})
 	})
 }
+
+
+
 
 console.log();
 if(name.length!=0){

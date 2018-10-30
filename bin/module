@@ -142,7 +142,6 @@ function create(name, parentName,TemplateName){
 							spinner.succeed('解压缩成功');
 							console.log('拷贝文件到项目中……')
 							console.log();
-
 							let errorTip = 0
 							let config = JSON.parse(fs.readFileSync(home+'/joywok_template/config.json','utf-8'));
 							let chunk = config['chunk'];
@@ -202,7 +201,7 @@ function create(name, parentName,TemplateName){
 							console.log();
 							console.log(chalk.yellow('  请在Index.html引入资源文件'));
 							console.log();
-							console.log(chalk.red('  <link rel="stylesheet" type="text/css" href="../styles/'+name+'/index.css">'));
+							console.log(chalk.red('  <link rel="stylesheet" type="text/css" href="styles/'+name+'/index.css">'));
 							console.log();
 							console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
 							console.log();
@@ -257,6 +256,8 @@ function create(name, parentName,TemplateName){
 		}
 	});
 }
+
+
 let name = program.args[0] || '';
 if(name.length!=0){
 	inquirer.prompt(project)
