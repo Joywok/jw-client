@@ -99,8 +99,19 @@ function create(name, parentName,TemplateName){
 			console.log();
 			return
 		} else {
-			console.log(typeof(TemplateName),'这个是什么啊');
 			if(typeof(TemplateName)!='undefined' && TemplateName.length!=0){
+
+				if(TemplateName!='todos'){
+					console.log();
+					console.log(chalk.red('# ***********************'));
+					console.log();
+					console.log(chalk.red('  ERROR：此模板不存在，请更换!'));
+					console.log();
+					console.log(chalk.red('# ***********************'));
+					console.log();
+					return 
+				}
+
 				rm(home+'/joywok_template.zip');
 				let spinner = ora('模板下载中…').start();
 				let body = "";
@@ -108,8 +119,8 @@ function create(name, parentName,TemplateName){
 				let len = 0;
 				let data = [];
 				request
-					// .get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
-					.get('http://0.0.0.0:8080/joywok_template.zip')
+					.get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
+					// .get('http://0.0.0.0:8080/joywok_template.zip')
 					.on( 'response', function ( data ) {
 						len = parseInt(data.headers['content-length']);
 					})
@@ -139,66 +150,66 @@ function create(name, parentName,TemplateName){
 							let models = config['models'];
 							let scss = config['scss'];
 							let routers = config['routers'];
-							console.log(scss,'123123123');
-							// fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
-							// 	if(err){
-							// 		errorTip++
-							// 		return 
-							// 	}
-							// 	_.each(chunk,function(i){
-							// 		let template = fs.readFileSync(home+'/joywok_template/chunk/'+i,'utf-8');
-							// 		template = template.replace(/<%name%>/gi, name);
-							// 		let templatePath = process.cwd() + '/src/scripts/chunk/' + name + '/'+i
-							// 		fs.writeFileSync(templatePath, template);
-							// 	})
-							// })
-							// _.each(components,function(i){
-							// 	let template = fs.readFileSync(home+'/joywok_template/components/'+i,'utf-8');
-							// 	let templatePath = process.cwd() + '/src/scripts/components/'+i
-							// 	fs.writeFileSync(templatePath, template);
-							// })
-							// fs.mkdir(process.cwd() + '/src/scripts/models/' + name,(err)=>{
-							// 	if(err){
-							// 		errorTip++
-							// 		return 
-							// 	}
-							// 	_.each(models,function(i){
-							// 		let template = fs.readFileSync(home+'/joywok_template/models/'+i,'utf-8');
-							// 		template = template.replace(/<%name%>/gi, name);
-							// 		let templatePath = process.cwd() + '/src/scripts/models/'+name+'/'+i
-							// 		fs.writeFileSync(templatePath, template);
-							// 	})
-
-							// })
-							fs.mkdir(process.cwd() + '/src/scss/' + name,(err)=>{
+							fs.mkdir(process.cwd() + '/src/scripts/chunk/' + name,(err)=>{
 								if(err){
-									errorTip++
+									console.log(err)
+									return 
+								}
+								_.each(chunk,function(i){
+									let template = fs.readFileSync(home+'/joywok_template/chunk/'+i,'utf-8');
+									template = template.replace(/<%name%>/gi, name);
+									let templatePath = process.cwd() + '/src/scripts/chunk/' + name + '/'+i
+									fs.writeFileSync(templatePath, template);
+								})
+							})
+							_.each(components,function(i){
+								let template = fs.readFileSync(home+'/joywok_template/components/'+i,'utf-8');
+								let templatePath = process.cwd() + '/src/scripts/components/'+i
+								fs.writeFileSync(templatePath, template);
+							})
+							fs.mkdir(process.cwd() + '/src/scripts/models/' + name,(err)=>{
+								if(err){
+									console.log(err)
 									return 
 								}
 								_.each(models,function(i){
+									let template = fs.readFileSync(home+'/joywok_template/models/'+i,'utf-8');
+									template = template.replace(/<%name%>/gi, name);
+									let templatePath = process.cwd() + '/src/scripts/models/'+name+'/'+i
+									fs.writeFileSync(templatePath, template);
+								})
+							})
+							fs.mkdir(process.cwd() + '/src/scss/' + name,(err)=>{
+								if(err){
+									console.log(err)
+									return 
+								}
+								_.each(scss,function(i){
 									let template = fs.readFileSync(home+'/joywok_template/scss/'+i,'utf-8');
 									template = template.replace(/<%name%>/gi, name);
 									let templatePath = process.cwd() + '/src/scss/'+name+'/'+i
 									fs.writeFileSync(templatePath, template);
 								})
 							})
-
-							// fs.mkdir(process.cwd() + '/src/scripts/routes/' + name,(err)=>{
-							// 	if(err){
-							// 		errorTip++
-							// 		return 
-							// 	}
-							// 	_.each(routers,function(i){
-							// 		let template = fs.readFileSync(home+'/joywok_template/routers/'+i,'utf-8');
-							// 		template = template.replace(/<%name%>/gi, name);
-							// 		let templatePath = process.cwd() + '/src/scripts/routes/'+name+'/'+i
-							// 		fs.writeFileSync(templatePath, template);
-							// 	})
-							// })
-
-							console.log(errorTip)
-
-
+							let template = fs.readFileSync(home+'/joywok_template/routers/index.js','utf-8');
+							template = template.replace(/<%name%>/gi, name);
+							let templatePath = process.cwd() + '/src/scripts/routes/'+name+'.js'
+							fs.writeFileSync(templatePath, template);
+							console.log();
+							console.log(chalk.yellow('# 模块初始化成功!'));
+							console.log();
+							console.log('# ========================');
+							console.log();
+							console.log(chalk.yellow('  请在Index.html引入资源文件'));
+							console.log();
+							console.log(chalk.red('  <link rel="stylesheet" type="text/css" href="../styles/'+name+'/index.css">'));
+							console.log();
+							console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
+							console.log();
+							console.log(chalk.red('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
+							console.log();
+							console.log('# ========================');
+							console.log();
 						});
 						unzipper.on('progress', function (fileIndex, fileCount) {
 						});
