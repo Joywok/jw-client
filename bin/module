@@ -13,9 +13,29 @@ const ora = require('ora');//命令行loading
 const home = require('user-home');
 const request = require('request');
 const DecompressZip = require('decompress-zip');
+const spawn = require('child_process').spawn
 console.log();
 
 program.parse(process.argv);
+function runCommand(cmd, args, options) {
+  return new Promise((resolve, reject) => {
+    const spwan = spawn(
+      cmd,
+      args,
+      Object.assign(
+        {
+          cwd: process.cwd(),
+          stdio: 'inherit',
+          shell: true,
+        },
+        options
+      )
+    )
+    spwan.on('exit', () => {
+      resolve()
+    })
+  })
+}
 
 let indexTemplate = 'import React , {Component} from "react";\n\
 import {connect} from "dva";\n\
@@ -119,8 +139,8 @@ function create(name, parentName,TemplateName){
 				let len = 0;
 				let data = [];
 				request
-					.get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
-					// .get('http://0.0.0.0:8080/joywok_template.zip')
+					// .get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
+					.get('http://0.0.0.0:8080/joywok_template.zip')
 					.on( 'response', function ( data ) {
 						len = parseInt(data.headers['content-length']);
 					})
@@ -194,6 +214,7 @@ function create(name, parentName,TemplateName){
 							template = template.replace(/<%name%>/gi, name);
 							let templatePath = process.cwd() + '/src/scripts/routes/'+name+'.js'
 							fs.writeFileSync(templatePath, template);
+
 							console.log();
 							console.log(chalk.yellow('# 模块初始化成功!'));
 							console.log();
