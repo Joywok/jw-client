@@ -75,8 +75,8 @@ function downloadFile(callBack){
 	let len = 0;
 	let data = [];
 	request
-		.get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
-		// .get('http://0.0.0.0:8080/joywok_back.zip')
+		// .get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
+		.get('http://0.0.0.0:8080/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -112,12 +112,12 @@ let project = [
 	},{
     type: 'list',
     name: 'installnode',
-    message: '使用什么方式安装node_module?',
+    message: '使用什么方式安装node_module:',
     choices: [{name:'  yarn',value:'yarn'},{name:'  npm install',value:'npm'},{name:'  none',value:'none'}],
 	}, {
 		type: 'list',
 		name: 'client',
-		message: '开发平台的？(平台不同，引入的组件库不同)',
+		message: '开发平台(平台不同，引入的组件库不同)',
 		choices: [{ name: 'Web', value: 'Web' }, { name: 'Mobile', value: 'mobile' }],
 	},{
 		type:'confirm',

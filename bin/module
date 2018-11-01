@@ -139,8 +139,8 @@ function create(name, parentName,TemplateName){
 				let len = 0;
 				let data = [];
 				request
-					.get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
-					// .get('http://0.0.0.0:8080/joywok_template.zip')
+					// .get('https://github.com/Joywok/jw-client/raw/master/joywok_template.zip')
+					.get('http://0.0.0.0:8080/joywok_template.zip')
 					.on( 'response', function ( data ) {
 						len = parseInt(data.headers['content-length']);
 					})
