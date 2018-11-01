@@ -75,8 +75,8 @@ function downloadFile(callBack){
 	let len = 0;
 	let data = [];
 	request
-		// .get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
-		.get('http://0.0.0.0:8080/joywok_back.zip')
+		.get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
+		// .get('http://0.0.0.0:8080/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -113,7 +113,7 @@ let project = [
     type: 'list',
     name: 'installnode',
     message: '使用什么方式安装node_module:',
-    choices: [{name:'  yarn',value:'yarn'},{name:'  npm install',value:'npm'},{name:'  none',value:'none'}],
+    choices: [{name:'  npm install',value:'npm'},{name:'  yarn',value:'yarn'},{name:'  none',value:'none'}],
 	}, {
 		type: 'list',
 		name: 'client',
