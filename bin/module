@@ -214,22 +214,26 @@ function create(name, parentName,TemplateName){
 							template = template.replace(/<%name%>/gi, name);
 							let templatePath = process.cwd() + '/src/scripts/routes/'+name+'.js'
 							fs.writeFileSync(templatePath, template);
-
-							console.log();
-							console.log(chalk.yellow('# 模块初始化成功!'));
-							console.log();
-							console.log('# ========================');
-							console.log();
-							console.log(chalk.yellow('  请在Index.html引入资源文件'));
-							console.log();
-							console.log(chalk.red('  <link rel="stylesheet" type="text/css" href="styles/'+name+'/index.css">'));
-							console.log();
-							console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
-							console.log();
-							console.log(chalk.red('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
-							console.log();
-							console.log('# ========================');
-							console.log();
+							runCommand('gulp',['publish'],{
+								cwd:process.cwd()
+							})
+							.then(function(){
+								console.log();
+								console.log(chalk.yellow('# 模块初始化成功!'));
+								console.log();
+								console.log('# ========================');
+								console.log();
+								console.log(chalk.yellow('  请在Index.html引入资源文件'));
+								console.log();
+								console.log(chalk.red('  <link rel="stylesheet" type="text/css" href="styles/'+name+'/index.css">'));
+								console.log();
+								console.log(chalk.yellow('  请在' + (parentName ? parentName : '根') + '路由中动态引入路由文件吧'));
+								console.log();
+								console.log(chalk.red('  getChildRoutes(partialNextState, cb) {\n    require.ensure([], (require) => {\n      cb(null, [\n        require("./' +(parentName?'':'routes/')+ name + '")\n      ])\n\    })\n  }'));
+								console.log();
+								console.log('# ========================');
+								console.log();
+							})
 						});
 						unzipper.on('progress', function (fileIndex, fileCount) {
 						});

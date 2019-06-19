@@ -75,7 +75,8 @@ function downloadFile(callBack){
 	let len = 0;
 	let data = [];
 	request
-		.get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
+		// .get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
+    .get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
 		// .get('http://0.0.0.0:8080/joywok_back.zip')
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
@@ -292,10 +293,9 @@ function SpecailRun(callBack){
 
 
 
-
 console.log();
 if(name.length!=0){
-	const hasNameFolder = fs.existsSync(name); 
+	const hasNameFolder = fs.existsSync(name);
 	if(hasNameFolder){
 		inquirer.prompt([{
 			type:'confirm',
