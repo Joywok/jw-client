@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // zip -r joywok_back.zip .babelrc .editorconfig .gitignore README.md build/ gulpfile.js package.json routers/ src/ webpack.config.js yarn.lock 
+// zip -r joywok_back_default.zip .babelrc .gitignore  build/ gulpfile.js package.json postcss.config.js src/ webpack.config.js
 /*
 	jw-client init module(项目名称)
 	1.下载默认模板
@@ -67,17 +68,21 @@ function getGitUser(){
 }
 const gituser = getGitUser();
 program.parse(process.argv);
-function downloadFile(callBack){
+function downloadFile(name,callBack){
 	rm(home+'/joywok_back.zip');
 	const spinner = ora('模板下载中…').start();
 	let body = "";
 	let cur = 0;
 	let len = 0;
 	let data = [];
+	// let url = 'http://0.0.0.0:8080/joywok_back_default.zip';
+	let url = 'https://github.com/Joywok/jw-client/blob/master/joywok_back_default.zip'
+	if(name == 'antd'){
+		url = 'http://open.joywok.com/joywok_back.zip'
+	}
 	request
-		// .get('https://github.com/Joywok/jw-client/raw/master/joywok_back.zip')
-    .get('http://open.joywok.com/joywok_back.zip')
-		// .get('http://0.0.0.0:8080/joywok_back.zip')
+    // .get('http://open.joywok.com/joywok_back.zip')
+		.get(url)
 		.on( 'response', function ( data ) {
 			len = parseInt(data.headers['content-length']);
 		})
@@ -94,7 +99,9 @@ function downloadFile(callBack){
 		.pipe(fs.createWriteStream(home+'/joywok_back.zip'))
 }
 let name = program.args[0] || '';
-let project = [
+let specailProject = program.args[1] || '';
+
+let projectNormal = [
 	{
 		type:'input',
 		name:'name',
@@ -115,7 +122,10 @@ let project = [
     name: 'installnode',
     message: '使用什么方式安装node_module:',
     choices: [{name:'  npm install',value:'npm'},{name:'  yarn',value:'yarn'},{name:'  none',value:'none'}],
-	}, {
+	}
+]
+let project = projectNormal.concat([
+	{
 		type: 'list',
 		name: 'client',
 		message: '开发平台(平台不同，引入的组件库不同)',
@@ -124,14 +134,13 @@ let project = [
 		type:'confirm',
 		name:'jssdk',
 		message:'是否包含JSSDK开发框架'
-		// 
 	}, {
 		type: 'confirm',
 		name: 'jssdkconfig',
 		message: '是否包含JSSDK免登功能'
 		// <script type="text/javascript" src="https://www.joywok.com/dist/scripts/jssdk.js"></script>
 	}
-]
+])
 
 function unzip(data,callBack){
 	const spinner = ora('解压缩中…').start();
@@ -178,7 +187,7 @@ function runCommand(cmd, args, options) {
   })
 }
 
-function changeFile(data){
+function changeFile(name,data){
 	console.log();
 	unzip(data,function(){
 	  let packageFile = process.cwd()+'/'+data['name']+'/package.json'
@@ -251,18 +260,78 @@ function changeFile(data){
 	})
 }
 
-function run(){
-	downloadFile(function(){
-		inquirer.prompt(project)
+function changeDefaultFile(data){
+	console.log();
+	unzip(data,function(){
+	  let packageFile = process.cwd()+'/'+data['name']+'/package.json'
+	  let config = JSON.parse(fs.readFileSync(packageFile,'utf-8'));
+	  let newData = Object.assign(config,data);
+	  fs.writeFileSync(packageFile, JSON.stringify(newData, null, 2) + '\n')
+  	let cwd = '';
+  	let args = [];
+		if(data['installnode'] == 'yarn'){
+			cwd = 'yarn';
+		}else if(data['installnode'] == 'npm'){
+			cwd = 'npm';
+			args = ['install']
+		}
+		let htmlfile = process.cwd() + '/' + data["name"] + '/src/index.html';
+		let html = fs.readFileSync(htmlfile, 'utf-8');
+		html = html.replace(/<%name%>/gi,data['name'])
+		fs.writeFileSync(htmlfile, html);
+		runCommand(cwd,args,{
+			cwd:process.cwd()+'/'+data['name']
+		})
+		.then(function(){
+			return runCommand('webpack',['-p'],{
+				cwd:process.cwd()+'/'+data['name']
+			})
+		})
+		.then(function(){
+			return runCommand('gulp',['publish'],{
+				cwd:process.cwd()+'/'+data['name']
+			})
+		})
+		.then(function(){
+			console.log();
+			console.log('# 项目初始化成功!');
+			console.log();
+			console.log('# ========================');
+			console.log();
+			console.log('  使用下面命令赶紧启动吧！');
+			console.log();
+			console.log(chalk.yellow('  cd '+data['name']));
+			console.log();
+			console.log(chalk.yellow('  npm start '));
+			console.log();
+		})
+	})
+}
+
+function run(name){
+	downloadFile(name,function(){
+		let list = projectNormal;
+		if(name == 'antd'){
+			list = project
+		}
+		inquirer.prompt(list)
 		.then((answers) => {
-			changeFile(answers)
+			if(name == 'antd'){
+				changeFile(answers)
+			}else{
+				changeDefaultFile(answers)
+			}
 		})
 	})  
 }
-function SpecailRun(callBack){
-	downloadFile(function(){
+function SpecailRun(name,callBack){
+	downloadFile(name,function(){
 		project[0]['default'] = 'JwDemo';
-		inquirer.prompt(project)
+		let list = projectNormal;
+		if(name == 'antd'){
+			list = project
+		}
+		inquirer.prompt(list)
 		.then((answers) => {
 			let oldanswers = answers;
 			const hasNameFolder = fs.existsSync(oldanswers['name']); 
@@ -279,18 +348,41 @@ function SpecailRun(callBack){
 						let removePath = oldanswers['name']+'/*'
 						rm(removePath);
 						console.log('清空目录成功')
-						changeFile(oldanswers)
+						if(name == 'antd'){
+							changeFile(oldanswers)
+						}else{
+							changeDefaultFile(oldanswers)
+						}
 					}
 				})
 			}else{
 				let str = 'mkdir '+oldanswers['name'];
 				exec(str);
-				changeFile(oldanswers)
+				if(name == 'antd'){
+					changeFile(oldanswers)
+				}else{
+					changeDefaultFile(oldanswers)
+				}
 			}
 		})
 	})
 }
 
+function choseUi(callBack){
+	inquirer.prompt([{
+		type: 'list',
+		name: 'project',
+		message: '使用哪种UI框架',
+		choices: [{ name: 'Material', value: 'material' },{ name: 'Antd', value: 'antd' }],
+	}])
+	.then((answers) => {
+		if(callBack){
+		 callBack(answers.project)
+		}else{
+			run(answers.project);		
+		}
+	})
+}
 
 
 console.log();
@@ -309,16 +401,18 @@ if(name.length!=0){
 				console.log('清空目录中…')
 				rm(removePath);
 				console.log('清空目录成功')
-				run();
+				choseUi();
 			}
 		})
 	}else{
 		let str = 'mkdir '+name;
 		exec(str);
-		run();
+		choseUi()
 	}
 }else{
-	SpecailRun()
+	choseUi(function(name){
+		SpecailRun(name)	
+	})
 }
 
 
