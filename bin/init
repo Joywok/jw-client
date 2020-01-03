@@ -76,7 +76,7 @@ function downloadFile(name,callBack){
 	let len = 0;
 	let data = [];
 	// let url = 'http://0.0.0.0:8080/joywok_back_default.zip';
-	let url = 'https://github.com/Joywok/jw-client/blob/master/joywok_back_default.zip'
+	let url = 'http://open.joywok.com/joywok_back_default.zip'
 	if(name == 'antd'){
 		url = 'http://open.joywok.com/joywok_back.zip'
 	}
@@ -159,7 +159,7 @@ function unzip(data,callBack){
 	unzipper.on('progress', function (fileIndex, fileCount) {
 		// target.find('.update-code-btn').html('<span>更新进度:'+parseInt((fileIndex+1)/fileCount*100)+'%</span>')
 	});
-	let url = './'+data['name']+'/'
+	let url = './'+(data['name'] || name)+'/'
 	unzipper.extract({
     path: url,
     filter: function (file) {
@@ -187,7 +187,7 @@ function runCommand(cmd, args, options) {
   })
 }
 
-function changeFile(name,data){
+function changeFile(data){
 	console.log();
 	unzip(data,function(){
 	  let packageFile = process.cwd()+'/'+data['name']+'/package.json'

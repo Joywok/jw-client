@@ -1,6 +1,6 @@
 {
   "name": "jw-client",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "bin": {
     "jw-client": "bin/jw-client",
     "jw-client-init": "bin/init",
