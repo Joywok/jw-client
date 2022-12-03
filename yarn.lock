@@ -370,12 +370,12 @@ debug@^2.2.0, debug@^2.3.3:
     ms "2.0.0"
 
 decode-uri-component@^0.2.0:
-  version "0.2.0"
-  resolved "http://registry.npm.taobao.org/decode-uri-component/download/decode-uri-component-0.2.0.tgz#eb3913333458775cb84cd1a1fae062106bb87545"
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
 
-decompress-zip@^0.3.0:
-  version "0.3.0"
-  resolved "http://registry.npm.taobao.org/decompress-zip/download/decompress-zip-0.3.0.tgz#ae3bcb7e34c65879adfe77e19c30f86602b4bdb0"
+decompress-zip@0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/decompress-zip/-/decompress-zip-0.3.1.tgz#3e4c6972fe80d89bb0fa9542e30044019ae6f626"
   dependencies:
     binary "^0.3.0"
     graceful-fs "^4.1.3"
